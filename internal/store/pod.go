@@ -580,6 +580,27 @@ func podMetricFamilies(allowLabelsList []string) []generator.FamilyGenerator {
 			}),
 		),
 		*generator.NewFamilyGenerator(
+			"kube_pod_volcano_container_status_running",
+			"Describes whether the container is currently in running state.",
+			metric.Gauge,
+			"",
+			wrapPodFunc(func(p *v1.Pod) *metric.Family {
+				ms := make([]*metric.Metric, len(p.Status.ContainerStatuses))
+
+				for i, cs := range p.Status.ContainerStatuses {
+					ms[i] = &metric.Metric{
+						LabelKeys:   []string{"container", "job_name", "queue"},
+						LabelValues: []string{cs.Name, p.Labels["volcano.sh/job-name"], p.Labels["volcano.sh/queue-name"]},
+						Value:       boolFloat64(cs.State.Running != nil),
+					}
+				}
+
+				return &metric.Family{
+					Metrics: ms,
+				}
+			}),
+		),
+		*generator.NewFamilyGenerator(
 			"kube_pod_init_container_status_running",
 			"Describes whether the init container is currently in running state.",
 			metric.Gauge,
